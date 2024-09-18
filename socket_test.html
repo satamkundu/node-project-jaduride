@@ -54,6 +54,11 @@
         let maxReconnectInterval = 16000;
         let hasError = false;
 
+        let purposeGenerateNumber = "generateNumber"
+
+        let startingRequestNumber = 1;
+        let maxRandomNumberRequest = 20;
+
         function elementColorChange(){
             document.getElementById('messages').style.color = (hasError) ? "Red" : "Green";
         }
@@ -73,7 +78,11 @@
                 const data = JSON.parse(event.data)
                 console.log('Message from server:', data);
                 hasError = data.error;
-                addMessage(`Server: ${data.message}`);
+
+                if(data.purpose === purposeGenerateNumber && startingRequestNumber <= maxRandomNumberRequest){                    
+                    sendMessage()                    
+                }
+                addMessage(`Server: ${startingRequestNumber} ${data.message}`);
             };
 
             ws.onclose = () => { // Connection closed
@@ -107,12 +116,13 @@
             const token = token_field.value
 
             if (ws.readyState === WebSocket.OPEN) {
+                startingRequestNumber++;
+
                 ws.send(JSON.stringify({
+                    purpose: purposeGenerateNumber,
                     token: token,
                     message: message
                 }));
-
-                addMessage(`Client: ${message}`);
             }else {
                 hasError = true
                 addMessage('Connection is not open. Message not sent.');
@@ -122,7 +132,7 @@
         function addMessage(message) { // Add message to display
             const messagesDiv = document.getElementById('messages');
             elementColorChange()
-            messagesDiv.innerHTML = message
+            messagesDiv.innerHTML += message + "<br>"
         }
 
         connect()

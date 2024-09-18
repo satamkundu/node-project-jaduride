@@ -7,10 +7,13 @@ const wss = new websocket.Server({
     port: process.env.PORT_SOCKET
 })
 
-const buildResponse = (ws, hasError, message) => {
+const buildResponse = (ws, hasError, message, uid = "", number = 0, purpose = "") => {
     ws.send(JSON.stringify({
         error: hasError,
-        message: message
+        message: message,
+        uid : uid,
+        number : number,
+        purpose : purpose
     }))
 }
 
@@ -38,7 +41,11 @@ const messageMiddleware = (ws, message, next) => {
 
 const messageHandler = (ws, message) => {
     const randomNumber = generateRandomNumber()
-    buildResponse(ws, false, `uuid : ${message.user.uuid} | A randorm number : ${randomNumber}`)
+    const uid = message.user.uuid;
+
+    const text = `uuid : ${uid} | A random number : ${randomNumber}`
+
+    buildResponse(ws, false, text, uid, randomNumber, message.purpose)
 }
 
 wss.on('connection', (ws) => {

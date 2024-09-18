@@ -1,0 +1,5 @@
+PORT=3000
+PORT_SOCKET=8080
+requiresAuth=false
+JWT_SECRET='z!@mwA?!DmTo"s/EJNz;i|:OxYgjsk}@^m8(=?NlQPea*.C=j$N?i^vo+*BC>*B'
+JWT_EXPIRES_IN=1h

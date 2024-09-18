@@ -18,10 +18,10 @@
             height: fit-content;
         }
         .block {
-            height: 425px;
-            max-width: 32rem;
+            /* height: 425px; */
+            max-width: 35rem;
             padding-top: 15px;  
-            margin-top: 7rem;
+            /* margin-top: 7rem; */
             border: solid 1px;
             border-radius: 5px;
         }  
@@ -32,6 +32,10 @@
 
         .center {
             margin: auto;  
+        }
+
+        #messages{
+            font-size: smaller;
         }
     </style>
 </head>
@@ -50,18 +54,11 @@
 
     <script>
         let ws;
-        let reconnectInterval = 1000;
-        let maxReconnectInterval = 16000;
-        let hasError = false;
 
         let purposeGenerateNumber = "generateNumber"
 
-        let startingRequestNumber = 1;
+        let startingRequestNumber = 0;
         let maxRandomNumberRequest = 20;
-
-        function elementColorChange(){
-            document.getElementById('messages').style.color = (hasError) ? "Red" : "Green";
-        }
 
         function connect() {
             ws = new WebSocket('ws://localhost:8080');
@@ -69,45 +66,42 @@
             // Connection opened
             ws.onopen = () => {
                 console.log('Connected to server');
-                hasError = false;
                 addMessage('Connected to server');
             };
 
             // Listen for messages
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data)
-                console.log('Message from server:', data);
-                hasError = data.error;
 
-                if(data.purpose === purposeGenerateNumber && startingRequestNumber <= maxRandomNumberRequest){                    
-                    sendMessage()                    
+                console.log(startingRequestNumber);
+                console.log('Message from server:', data);
+
+                if(startingRequestNumber === maxRandomNumberRequest){
+                    ws.close()
                 }
-                addMessage(`Server: ${startingRequestNumber} ${data.message}`);
+
+                if(data.purpose === purposeGenerateNumber && startingRequestNumber < maxRandomNumberRequest){                     
+                    startingRequestNumber++;           
+                    sendMessage()
+                    addMessage(`Request. ${startingRequestNumber}. ${data.message}`)                    
+                }
+
+                if(data.purpose != purposeGenerateNumber){                    
+                    addMessage(`Server : ${data.message}`);
+                }
             };
 
             ws.onclose = () => { // Connection closed
-                hasError = true;
                 console.log('Disconnected from server');
-                addMessage('Disconnected from server. Trying to reconnect...');
-                attemptReconnect();
+                addMessage('Disconnected from server...');
             };
 
             ws.onerror = (error) => { // Handle errors
-                hasError = true;
                 console.error('WebSocket error:', error);
                 addMessage(`Error: ${error.message}`);
             };
         }
 
-        function attemptReconnect() {
-            setTimeout(() => {
-                hasError = false;
-                console.log(`Attempting to reconnect...`);
-                connect();
-                reconnectInterval = Math.min(maxReconnectInterval, reconnectInterval * 2);
-            }, reconnectInterval);
-        }
-        
         function sendMessage() {  // Send message to server
             const input = document.getElementById('messageInput');
             const token_field = document.getElementById('tokenInput');
@@ -116,8 +110,6 @@
             const token = token_field.value
 
             if (ws.readyState === WebSocket.OPEN) {
-                startingRequestNumber++;
-
                 ws.send(JSON.stringify({
                     purpose: purposeGenerateNumber,
                     token: token,
@@ -131,7 +123,6 @@
 
         function addMessage(message) { // Add message to display
             const messagesDiv = document.getElementById('messages');
-            elementColorChange()
             messagesDiv.innerHTML += message + "<br>"
         }
 

@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
-import { MygatewayGateway } from './gateways/mygateway.gateway';
-import { RandomNumberService } from './generator/random-number.service';
+import { RandomNumberService } from './random-number/random-number.service';
+import { EventsGateway } from './gateways/events.gateway';
 
 @Module({
     imports: [
@@ -12,7 +12,7 @@ import { RandomNumberService } from './generator/random-number.service';
     controllers: [],
     providers: [
         RandomNumberService,
-        MygatewayGateway
+        EventsGateway
     ],
 })
 export class AppModule {

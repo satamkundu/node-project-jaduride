@@ -1,16 +1,17 @@
-import { UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { RandomNumberService } from 'src/generator/random-number.service';
-import { WsAuthGuard } from 'src/guard/wsauth.guard';
+import { AuthService } from 'src/auth/auth.service';
+import { User, WsAuthRequest, WsMessageResponse } from 'src/auth/dto/auth.dto';
+import { RandomNumberService } from 'src/random-number/random-number.service';
+
 import { Server, Socket } from 'ws';
 
 @WebSocketGateway()
 
-export class MygatewayGateway {
+export class EventsGateway {
 
     constructor(
-        private jwtService : JwtService,
+        private authService : AuthService,
         private readonly randomNumberService: RandomNumberService
     ){}
 
@@ -18,14 +19,14 @@ export class MygatewayGateway {
     server: Server;
 
     @SubscribeMessage('message')
-    handleMessage(client: Socket, payload: any): any {
-        const token = payload?.token
+    handleMessage(client: Socket, payload: WsAuthRequest): string | WsMessageResponse {
+        const token = payload.token
         
         if(typeof token === 'undefined'){
             return `Please provide token`
         }
         
-        const user = this.validateToken(token)
+        const user = this.authService.validateToken(token)
 
         if(!user){
             return "Unauthorised access"
@@ -34,8 +35,8 @@ export class MygatewayGateway {
         const generatedRandomNumber = this.randomNumberService.getRandomNumber();
 
         const finalResponse = {
-            uid : user?.uid,
-            number : generatedRandomNumber
+            uid : user.uid,
+            number : generatedRandomNumber           
         }
 
         return finalResponse;
@@ -51,16 +52,5 @@ export class MygatewayGateway {
 
     handleDisconnect(client: Socket) {
         console.log('Client disconnected');
-    }
-
-    validateToken(token: string): any {
-        try {
-            const decoded = this.jwtService.verify(token);
-            return decoded
-        } catch (error) {
-            return false
-        }
-    }
-
-    
+    }    
 }

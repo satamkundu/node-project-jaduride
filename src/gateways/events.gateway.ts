@@ -1,13 +1,11 @@
-import { JwtService } from '@nestjs/jwt';
 import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { AuthService } from 'src/auth/auth.service';
-import { User, WsAuthRequest, WsMessageResponse } from 'src/auth/dto/auth.dto';
+import { WsAuthRequest, WsMessageResponse } from 'src/auth/dto/auth.dto';
 import { RandomNumberService } from 'src/random-number/random-number.service';
 
 import { Server, Socket } from 'ws';
 
 @WebSocketGateway()
-
 export class EventsGateway {
 
     constructor(
@@ -19,7 +17,7 @@ export class EventsGateway {
     server: Server;
 
     @SubscribeMessage('message')
-    handleMessage(client: Socket, payload: WsAuthRequest): string | WsMessageResponse {
+    handleMessage(client: Socket, payload: WsAuthRequest): any {
         const token = payload.token
         
         if(typeof token === 'undefined'){
@@ -32,14 +30,27 @@ export class EventsGateway {
             return "Unauthorised access"
         }
 
-        const generatedRandomNumber = this.randomNumberService.getRandomNumber();
+        let count = 1;
+        const interval = setInterval(() => {
+            if (count <= 20) {
+                const generatedRandomNumber = this.randomNumberService.getRandomNumber(); // call random number generator from a generetor function
+                
+                console.log(`Sending ${count} no response...`);
+                
+                const wsResponse : WsMessageResponse = {
+                    resonseCount : count,
+                    uid : user.uid,
+                    number : generatedRandomNumber
+                }
 
-        const finalResponse = {
-            uid : user.uid,
-            number : generatedRandomNumber           
-        }
-
-        return finalResponse;
+                client.send(JSON.stringify(wsResponse));
+                count++;
+            } else {
+                clearInterval(interval); //clear the 20 response send process
+                client.close() //Manually close the socket connection
+                console.log(`Client disconnected after 20 response send...`);                
+            }
+        }, 1000);
     }
 
     afterInit(server: Server) {
@@ -52,5 +63,5 @@ export class EventsGateway {
 
     handleDisconnect(client: Socket) {
         console.log('Client disconnected');
-    }    
+    }
 }

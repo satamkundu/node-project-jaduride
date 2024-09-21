@@ -3,6 +3,7 @@ export interface WsAuthRequest{
 }
 
 export interface WsMessageResponse{
+    resonseCount : number,
     uid : string,
     number : number
 }

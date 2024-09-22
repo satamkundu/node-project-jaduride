@@ -16,18 +16,21 @@ export class EventsGateway {
     @WebSocketServer()
     server: Server;
 
-    @SubscribeMessage('message')
-    handleMessage(client: Socket, payload: WsAuthRequest): any {
-        const token = payload.token
+    handleMessage(client: Socket, payload: any): any {
+        const data = JSON.parse(payload)
+        
+        const token = data.token
         
         if(typeof token === 'undefined'){
-            return `Please provide token`
+            client.send(`Please provide token`)
+            return
         }
         
         const user = this.authService.validateToken(token)
 
         if(!user){
-            return "Unauthorised access"
+            client.send("Unauthorised access")
+            return
         }
 
         let count = 1;
@@ -59,6 +62,8 @@ export class EventsGateway {
 
     handleConnection(client: Socket) {
         console.log('Client connected');
+
+        client.on('message', (data : WsAuthRequest) => this.handleMessage(client, data))
     }
 
     handleDisconnect(client: Socket) {
